@@ -5,21 +5,25 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log; 
+use Illuminate\Support\Facades\Log;
 class EVerifyController extends Controller
 {
     private function accessToken(): string
     {
-        if ($t = Cache::get('everify_token')) return $t;
+        if ($t = Cache::get('everify_token'))
+            return $t;
 
         $data = Http::asForm()
             ->post(config('everify.auth_url'), [
-                'client_id'     => config('everify.client_id'),
+                'client_id' => config('everify.client_id'),
                 'client_secret' => config('everify.client_secret'),
             ])->throw()->json('data');
 
-        Cache::put('everify_token', $data['access_token'],
-            now()->setTimestamp($data['expires_at'])->subSeconds(60));
+        Cache::put(
+            'everify_token',
+            $data['access_token'],
+            now()->setTimestamp($data['expires_at'])->subSeconds(60)
+        );
 
         return $data['access_token'];
     }
@@ -27,14 +31,14 @@ class EVerifyController extends Controller
     public function verify(Request $r)
     {
         $v = $r->validate([
-            'mode'        => 'required|in:qr,manual',
-            'session_id'  => 'required|string',
-            'value'       => 'required_if:mode,qr|string',
-            'first_name'  => 'required_if:mode,manual|string',
+            'mode' => 'required|in:qr,manual',
+            'session_id' => 'required|string',
+            'value' => 'required_if:mode,qr|string',
+            'first_name' => 'required_if:mode,manual|string',
             'middle_name' => 'nullable|string',
-            'last_name'   => 'required_if:mode,manual|string',
-            'suffix'      => 'nullable|string',
-            'birth_date'  => 'required_if:mode,manual|string',
+            'last_name' => 'required_if:mode,manual|string',
+            'suffix' => 'nullable|string',
+            'birth_date' => 'required_if:mode,manual|string',
         ]);
 
         $payload = $v['mode'] === 'qr'
@@ -62,19 +66,24 @@ class EVerifyController extends Controller
 
         // Sanitized: only what the front end needs
         return response()->json([
-            'verified'       => true,
-            'full_name'      => $d['full_name'] ?? null,
-            'first_name'     => $d['first_name'] ?? null,
-            'middle_name'    => $d['middle_name'] ?? null,
-            'last_name'      => $d['last_name'] ?? null,
-            'suffix'         => $d['suffix'] ?? null,
-            'birth_date'     => $d['birth_date'] ?? null,
-            'gender'         => $d['gender'] ?? null,
-            'full_address'   => $d['full_address'] ?? null,
-            'barangay'       => $d['barangay'] ?? null,
-            'municipality'   => $d['municipality'] ?? null,
-            'province'       => $d['province'] ?? null,
-            'result_grade'   => $m['result_grade'] ?? 0,
+            'code' => $d['code'] ?? null,
+            'reference' => $d['reference'] ?? null,
+            'first_name' => $d['first_name'] ?? null,
+            'middle_name' => $d['middle_name'] ?? null,
+            'last_name' => $d['last_name'] ?? null,
+            'suffix' => $d['suffix'] ?? null,
+            'gender' => $d['gender'] ?? null,
+            'birth_date' => $d['birth_date'] ?? null,
+            'place_of_birth' => $d['place_of_birth'] ?? null,
+            'full_address' => $d['full_address'] ?? null,
+            'present_full_address' => $d['present_full_address'] ?? null,
+            'residency_status' => $d['residency_status'] ?? null,
+            'marital_status' => $d['marital_status'] ?? null,
+            'mobile_number' => $d['mobile_number'] ?? null,
+            'face_url' => $d['face_url'] ?? null,
+         
         ]);
+
+    
     }
 }
